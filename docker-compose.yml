@@ -38,5 +38,13 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+  customer-backend:
+    build: ./customer_backend
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db
+    volumes:
+      - ./customer_backend/uploads:/usr/src/app/uploads # Added volume mapping for uploads
 volumes:
   mongo-data:
