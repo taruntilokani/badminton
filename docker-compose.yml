@@ -25,11 +25,15 @@ services:
     depends_on:
       - backend
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
     ports:
       - "4000:4000"
     environment:
       - MONGO_URL=mongodb://db:27017/badminton
+    volumes:
+      - ./uploads:/usr/src/app/uploads # Volume for image uploads
     depends_on:
       - db
   db:

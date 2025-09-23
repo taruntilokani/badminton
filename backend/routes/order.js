@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/order');
-const { configureMulter } = require('../utils/imageUploadService'); // Import the generic service
+const { configureMulter } = require('../../utils/imageUploadService'); // Import the generic service
 
 // Configure multer for the initial order submission (racket photo)
 const uploadRacketPhoto = configureMulter('uploads/', 'racketImage');
@@ -24,8 +24,10 @@ router.post('/', uploadRacketPhoto, async (req, res) => { // Use the configured 
 
     await order.save();
 
-    // TODO: Implement notification service to notify rider and vendor, and send OTP to customer
-    console.log(`New order created: ${order._id}. Notifying rider and vendor. Rider pickup OTP: ${riderPickupOtp}`);
+    // Simulate notification to rider and vendor
+    console.log(`[NOTIFICATION] New order ${order._id} submitted by customer ${order.customerId}.`);
+    console.log(`[NOTIFICATION] Rider ${order.riderId} notified for pickup at ${order.pickupAddress}. OTP: ${riderPickupOtp}`);
+    console.log(`[NOTIFICATION] Vendor ${order.vendorId} notified about new order ${order._id}.`);
 
     res.status(201).json(order);
   } catch (err) {

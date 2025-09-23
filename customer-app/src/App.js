@@ -304,7 +304,9 @@ function ServiceFlow({ setRequestId, setView, setRequestIds }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   // Placeholder for customerId. In a real app, this would come from authentication state.
-  const customerId = 'USER123456'; // Example customer ID
+  // Using valid-looking ObjectId placeholders for Mongoose validation.
+  const customerId = '60d5ec49f8c7a10015a4b7c8'; // Example customer ID (valid ObjectId format)
+  const vendorId = '60d5ec49f8c7a10015a4b7c9';   // Example vendor ID (valid ObjectId format)
 
   const serviceOptions = [
     { name: 'Badminton Racquet', options: ['Grip replacement', 'String getting', 'Racket repair'] },
@@ -332,20 +334,22 @@ function ServiceFlow({ setRequestId, setView, setRequestIds }) {
 
     const formData = new FormData();
     formData.append('customerId', customerId);
+    formData.append('vendorId', vendorId); // Use the generated valid ObjectId
     formData.append('service', service);
     formData.append('option', option);
-    formData.append('photo', photo);
+    formData.append('racketImage', photo); // Corrected field name to match backend Multer configuration
 
     try {
-      const response = await fetch('/', {
+      // Use the correct backend URL and endpoint
+      const response = await fetch('http://localhost:4000/api/orders', {
         method: 'POST',
         body: formData, // Use FormData for file uploads
       });
       const data = await response.json();
 
       if (response.ok) {
-        setRequestId(data.id);
-        setRequestIds(prev => [...prev, data.id]); // Add new request ID to the list
+        setRequestId(data._id); // Use data._id as per Mongoose model
+        setRequestIds(prev => [...prev, data._id]); // Add new request ID to the list
         setSubmitting(false);
         setView('submitted'); // Go to submitted view
       } else {
