@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import VendorSignup from './VendorSignup';
 const mainBg = '#f4f6fb';
 const cardBg = '#fff';
 const accent = '#1976d2';
@@ -7,6 +8,7 @@ const font = 'Segoe UI, Arial, sans-serif';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const [requests, setRequests] = useState([
     { id: "REQ123456", status: "Waiting for vendor", vendorTime: 0, otp: "333333" },
     { id: "REQ654321", status: "Waiting for vendor", vendorTime: 0, otp: "444444" }
@@ -23,8 +25,7 @@ function App() {
     e.preventDefault();
     if (user === TEST_USER && pass === TEST_PASS) {
       setLoggedIn(true);
-      // Simulate fetching requests
-  // Requests already initialized above
+      // Requests already initialized above
     } else {
       setError('Invalid credentials. Use vendor@example.com / vendor123');
     }
@@ -35,12 +36,24 @@ function App() {
       <div style={{ maxWidth: 480, margin: '48px auto', background: cardBg, borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: `1px solid ${border}`, padding: 32 }}>
         <h2 style={{ color: accent, fontWeight: 700, marginBottom: 24, textAlign: 'center', letterSpacing: 1 }}>Vendor Dashboard</h2>
         {!loggedIn ? (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <input type="text" placeholder="Email" value={user} onChange={e => setUser(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16 }} />
-            <input type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16 }} />
-            {error && <div style={{ color: '#d32f2f', marginBottom: 8, fontWeight: 500 }}>{error}</div>}
-            <button type="submit" style={{ background: accent, color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontSize: 16, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }}>Login</button>
-          </form>
+          showSignup ? (
+            <VendorSignup onSuccess={() => setShowSignup(false)} />
+          ) : (
+            <>
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <input type="text" placeholder="Email" value={user} onChange={e => setUser(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16 }} />
+                <input type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16 }} />
+                {error && <div style={{ color: '#d32f2f', marginBottom: 8, fontWeight: 500 }}>{error}</div>}
+                <button type="submit" style={{ background: accent, color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontSize: 16, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }}>Login</button>
+              </form>
+              <div style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 12 }}>
+                Don't have an account?{' '}
+                <button type="button" onClick={() => setShowSignup(true)} style={{ color: accent, background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                  Create one
+                </button>
+              </div>
+            </>
+          )
         ) : (
           <div>
             <h3 style={{ color: accent, fontWeight: 600, marginBottom: 16 }}>New Requests</h3>
