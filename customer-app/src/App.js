@@ -73,10 +73,21 @@ function LoginForm({ setView }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  // Demo credentials for quick testing (frontend only)
+  const TEST_USER = 'customer@example.com';
+  const TEST_PASS = 'customer123';
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Allow demo login without backend
+    if (email === TEST_USER && password === TEST_PASS) {
+      localStorage.setItem('token', 'demo');
+      setView('home');
+      return;
+    }
+
     try {
       const response = await fetch('/api/users/login', {
         method: 'POST',
@@ -123,6 +134,7 @@ function LoginForm({ setView }) {
       </div>
       {error && <div style={errorStyle}>{error}</div>}
       <button type="submit" style={primaryBtn}>Login</button>
+      <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>Demo login: customer@example.com / customer123</div>
       <div style={linkBar}>
         <button type="button" style={linkBtn} onClick={() => setView('signup')}>Sign Up</button>
         <button type="button" style={linkBtn} onClick={() => setView('reset')}>Forgot Password?</button>

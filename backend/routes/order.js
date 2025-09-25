@@ -87,10 +87,9 @@ router.post('/:id/deliver-to-vendor', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Placeholder for OTP check if it were implemented:
-    // if (order.vendorDeliveryOtp !== otp) {
-    //   return res.status(400).json({ error: 'Invalid OTP for vendor delivery' });
-    // }
+    if (order.riderDeliveryToVendorOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP for vendor delivery' });
+    }
 
     order.status = 'in-progress';
     order.riderDeliveryToVendorTime = new Date(); // Rider time pauses
@@ -117,7 +116,7 @@ router.post('/:id/service-complete', async (req, res) => {
     }
 
     order.vendorServiceEndTime = new Date(); // Vendor time stops
-    order.riderReturnToCourtTime = new Date(); // Rider time resumes
+    // Rider time resumes from vendorServiceEndTime; final end time will be set on return-to-court
 
     // Calculate total vendor time in minutes
     const vendorServiceDuration = (order.vendorServiceEndTime - order.vendorServiceStartTime) / (1000 * 60);
@@ -204,10 +203,10 @@ router.post('/:id/customer-pickup', async (req, res) => {
     }
 
     order.status = 'completed'; // Service cycle ends
-    // The customer's overall service time is implicitly captured by the difference
-    // between order.serviceTimerStart and the current time, or a dedicated
-    // customerCompletionTime field if needed. For now, we'll rely on the
-    // existing timestamps and the final status.
+    order.customerCompletionTime = new Date();
+    if (order.serviceTimerStart) {
+      order.totalServiceTime = (order.customerCompletionTime - order.serviceTimerStart) / (1000 * 60);
+    }
 
     await order.save();
 
@@ -315,6 +314,59 @@ router.post('/:id/customer-pickup-evidence', configureMulter('uploads/evidence/'
 
     await order.save();
     res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Order summary for a single order (for customer/admin views)
+ */
+router.get('/:id/summary', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const o = await Order.findById(id).lean();
+    if (!o) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const riderPickupDuration =
+      o.riderPickupStartTime && o.riderDeliveryToVendorTime
+        ? (new Date(o.riderDeliveryToVendorTime) - new Date(o.riderPickupStartTime)) / (1000 * 60)
+        : 0;
+
+    const riderReturnDuration =
+      o.vendorServiceEndTime && o.riderReturnToCourtTime
+        ? (new Date(o.riderReturnToCourtTime) - new Date(o.vendorServiceEndTime)) / (1000 * 60)
+        : 0;
+
+    const vendorDuration =
+      o.vendorServiceStartTime && o.vendorServiceEndTime
+        ? (new Date(o.vendorServiceEndTime) - new Date(o.vendorServiceStartTime)) / (1000 * 60)
+        : 0;
+
+    const totalRider =
+      typeof o.totalRiderTime === 'number' ? o.totalRiderTime : riderPickupDuration + riderReturnDuration;
+
+    const totalVendor =
+      typeof o.totalVendorTime === 'number' ? o.totalVendorTime : vendorDuration;
+
+    const totalService =
+      o.customerCompletionTime && o.serviceTimerStart
+        ? (new Date(o.customerCompletionTime) - new Date(o.serviceTimerStart)) / (1000 * 60)
+        : o.serviceTimerStart
+          ? (Date.now() - new Date(o.serviceTimerStart)) / (1000 * 60)
+          : null;
+
+    const summary = {
+      orderId: o._id,
+      status: o.status,
+      totalRiderTime: Number(isFinite(totalRider) ? totalRider.toFixed(2) : 0),
+      totalVendorTime: Number(isFinite(totalVendor) ? totalVendor.toFixed(2) : 0),
+      totalServiceTime: totalService != null && isFinite(totalService) ? Number(totalService.toFixed(2)) : null
+    };
+
+    res.json(summary);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
