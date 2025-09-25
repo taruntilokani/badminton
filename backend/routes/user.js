@@ -38,7 +38,6 @@ router.post('/login', async (req, res) => {
 
 // Get all users
 router.get('/', async (req, res) => {
->>>>>>> REPLACE
   try {
     const users = await User.find();
     res.json(users);
