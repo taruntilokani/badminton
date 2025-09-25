@@ -21,6 +21,8 @@ app.use('/api/orders', require('./routes/order'));
 app.use('/api/users', require('./routes/user'));
 app.use('/api/vendors', require('./routes/vendor'));
 app.use('/api/riders', require('./routes/rider'));
+app.use('/api/admin', require('./routes/admin'));
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+>>>>>>> REPLACE
