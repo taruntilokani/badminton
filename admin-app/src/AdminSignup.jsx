@@ -35,7 +35,8 @@ function AdminSignup({ onSuccess }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:4000/api/admin/register', {
+      const baseUrl = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:4000`;
+      const res = await fetch(`${baseUrl}/api/admin/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),

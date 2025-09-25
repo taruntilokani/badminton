@@ -31,7 +31,8 @@ function RiderSignup({ onSuccess }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:4000/api/riders', {
+      const baseUrl = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:4000`;
+      const res = await fetch(`${baseUrl}/api/riders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
