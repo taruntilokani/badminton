@@ -44,7 +44,7 @@ function AdminDashboard({ token, onLogout }) {
   }, [token]);
 
   return (
-    <div>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
         <h2 style={{ color: accent, fontWeight: 700, margin: 0 }}>Admin Dashboard</h2>
         <button type="button" onClick={onLogout} style={{ background: '#b00020', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
@@ -65,22 +65,43 @@ function AdminDashboard({ token, onLogout }) {
         ) : orders.length === 0 ? (
           <div style={{ color: '#888', textAlign: 'center', marginTop: 12 }}>No orders found.</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {orders.map((o) => (
-              <div key={o.orderId} style={{ background: mainBg, borderRadius: 12, border: `1px solid ${border}`, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Created: {fmtDate(o.createdAt)}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}><span style={{ color: accent }}>Order:</span> {o.orderId}</div>
-                <div style={{ fontSize: 14, marginBottom: 6 }}><span style={{ color: accent }}>Status:</span> <b>{o.status}</b></div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Customer:</span> {o.customerId}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Vendor:</span> {o.vendorId}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Rider:</span> {o.riderId || '-'}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Pickup:</span> {o.pickupAddress || '-'}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Delivery:</span> {o.deliveryAddress || '-'}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Rider Time:</span> {o.totalRiderTime != null ? `${o.totalRiderTime} min` : '-'}</div>
-                <div style={{ fontSize: 14, marginBottom: 4 }}><span style={{ color: accent }}>Vendor Time:</span> {o.totalVendorTime != null ? `${o.totalVendorTime} min` : '-'}</div>
-                <div style={{ fontSize: 14 }}><span style={{ color: accent }}>Total Service:</span> {o.totalServiceTime != null ? `${o.totalServiceTime} min` : '-'}</div>
-              </div>
-            ))}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
+              <thead>
+                <tr style={{ background: accent, color: '#fff' }}>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Order ID</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Status</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Customer</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Vendor</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Rider</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Pickup OTP</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Delivery to Vendor OTP</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Vendor Handover OTP</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Customer Return OTP</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Rider Time (min)</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Vendor Time (min)</th>
+                  <th style={{ padding: '12px 15px', textAlign: 'left', border: `1px solid ${border}` }}>Total Service Time (min)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.orderId} style={{ background: '#fff', borderBottom: `1px solid ${border}` }}>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.orderId}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}><b>{o.status}</b></td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.customerId}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.vendorId}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.riderId || '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.riderPickupOtp || '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.riderDeliveryToVendorOtp || '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.vendorHandoverToRiderOtp || '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.customerReturnOtp || '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.totalRiderTime != null ? o.totalRiderTime.toFixed(2) : '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.totalVendorTime != null ? o.totalVendorTime.toFixed(2) : '-'}</td>
+                    <td style={{ padding: '10px 15px', border: `1px solid ${border}` }}>{o.totalServiceTime != null ? o.totalServiceTime.toFixed(2) : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -33,7 +33,8 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ adminId: admin._id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Admin login error:', err); // Log the full error for debugging
+    res.status(500).json({ error: 'An unexpected error occurred during login. Please check server logs.' });
   }
 });
 
@@ -84,6 +85,10 @@ router.get('/orders-report', async (req, res) => {
         deliveryAddress: o.deliveryAddress,
         serviceTimerStart: o.serviceTimerStart,
         customerCompletionTime: o.customerCompletionTime,
+        riderPickupOtp: o.riderPickupOtp,
+        riderDeliveryToVendorOtp: o.riderDeliveryToVendorOtp,
+        vendorHandoverToRiderOtp: o.vendorHandoverToRiderOtp,
+        customerReturnOtp: o.customerReturnOtp,
         totalRiderTime: Number(isFinite(totalRider) ? totalRider.toFixed(2) : 0),
         totalVendorTime: Number(isFinite(totalVendor) ? totalVendor.toFixed(2) : 0),
         totalServiceTime: totalService != null && isFinite(totalService) ? Number(totalService.toFixed(2)) : null,

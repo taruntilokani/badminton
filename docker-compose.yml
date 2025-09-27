@@ -60,6 +60,7 @@ services:
       - "4000:4000"
     environment:
       - MONGO_URL=mongodb://db:27017/badminton
+      - JWT_SECRET=supersecretjwtkey
     volumes:
       - ./uploads:/app/uploads # Volume for image uploads
     depends_on:
