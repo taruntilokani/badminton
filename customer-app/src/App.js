@@ -738,30 +738,16 @@ function OrderDetail({ orderId, setView }) {
           )}
 
           {/* Customer OTP for Final Racket Return */}
-          {order.status === 'delivered' && (
+          {(order.status === 'out-for-delivery' || order.status === 'delivered') && (
             <div style={{ borderTop: `1px solid ${border}`, paddingTop: 8 }}>
               <div style={{ fontSize: 13, color: '#111', fontWeight: 600, marginBottom: 6 }}>Customer Return OTP</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <input
-                  type="text"
-                  placeholder="Enter OTP from Rider"
-                  style={{ ...inputStyle, flex: 1 }}
-                  value={returnOtpInput}
-                  onChange={(e) => setReturnOtpInput(e.target.value)}
-                  required
-                  disabled={order.status !== 'delivered'} // Disable if not delivered
-                />
-                <button
-                  type="button"
-                  style={{ ...primaryBtn, width: 'auto', marginTop: 0, padding: '10px 16px' }}
-                  onClick={handleCustomerReturnOtpVerification}
-                  disabled={order.status !== 'delivered'} // Disable if not delivered
-                >
-                  Confirm Return
-                </button>
-              </div>
+              {order.status === 'out-for-delivery' && (
+                <div style={{ fontSize: 16, fontWeight: 700, color: accent, marginBottom: 12 }}>
+                  OTP to share with Rider: {order.customerReturnOtp}
+                </div>
+              )}
               <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                Please enter the OTP provided by the rider to confirm racket return.
+                Please share this OTP with the rider to confirm racket return.
               </div>
             </div>
           )}

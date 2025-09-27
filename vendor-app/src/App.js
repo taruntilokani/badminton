@@ -270,22 +270,6 @@ function OrdersList({ vendor, filter, onAction }) {
       );
     }
     // Status actions
-    if (o.status === 'picked') {
-      return (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <input
-            type="text"
-            placeholder="OTP from Rider"
-            value={otpInput[o._id] || ''}
-            onChange={(e) => setOtpInput((s) => ({ ...s, [o._id]: e.target.value }))}
-            style={{ flex: 1, padding: 8, borderRadius: 6, border: `1px solid ${border}`, fontSize: 14 }}
-          />
-          <button type="button" onClick={() => handleRiderDeliveryToVendor(o._id)} style={{ background: accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
-            Confirm Delivery
-          </button>
-        </div>
-      );
-    }
     const canStart = o.status === 'in-progress' && !o.vendorServiceStartTime;
     const canComplete = o.status === 'in-progress' && o.vendorServiceStartTime && !o.vendorServiceEndTime;
     const canHandover = o.status === 'vendor-completed-service-awaiting-rider-pickup';
@@ -344,7 +328,6 @@ function OrdersList({ vendor, filter, onAction }) {
                 <div>Payment: {o.paymentStatus || '-'}</div>
                 {o.vendorNotes ? <div>Vendor Notes: {o.vendorNotes}</div> : null}
                 {o.status === 'picked' && <div>Rider Delivery OTP: {o.riderDeliveryToVendorOtp}</div>}
-                {o.status === 'vendor-completed-service-awaiting-rider-pickup' && <div>Rider Pickup OTP: {o.vendorHandoverToRiderOtp}</div>}
                 <div style={{ marginTop: 4, fontSize: 12, color: '#555' }}>
                   Pickup: {o.pickupAddress || '-'} | Delivery: {o.deliveryAddress || '-'}
                 </div>

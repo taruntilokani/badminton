@@ -137,17 +137,13 @@ function RiderOrdersList({ rider, filter, onAction }) {
   const actionBar = (o) => {
     if (o.status === 'pending') {
       return (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <input
-            type="text"
-            placeholder="Pickup OTP"
-            value={otpInput[o._id] || ''}
-            onChange={(e) => setOtpInput((s) => ({ ...s, [o._id]: e.target.value }))}
-            style={{ flex: 1, padding: 8, borderRadius: 6, border: `1px solid ${border}`, fontSize: 14 }}
-          />
-          <button type="button" onClick={() => handlePickup(o._id)} style={{ background: accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
-            Pick Up Racket
-          </button>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: accent, marginBottom: 12 }}>
+            OTP to share with Customer: {o.riderPickupOtp}
+          </div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+            Please share this OTP with the customer to confirm you are the genuine rider for pickup.
+          </div>
         </div>
       );
     }
@@ -169,17 +165,13 @@ function RiderOrdersList({ rider, filter, onAction }) {
     }
     if (o.status === 'vendor-completed-service-awaiting-rider-pickup') {
       return (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <input
-            type="text"
-            placeholder="OTP from Vendor"
-            value={otpInput[o._id] || ''}
-            onChange={(e) => setOtpInput((s) => ({ ...s, [o._id]: e.target.value }))}
-            style={{ flex: 1, padding: 8, borderRadius: 6, border: `1px solid ${border}`, fontSize: 14 }}
-          />
-          <button type="button" onClick={() => handlePickupFromVendor(o._id)} style={{ background: accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
-            Pick Up from Vendor
-          </button>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: accent, marginBottom: 12 }}>
+            OTP to share with Vendor: {o.vendorHandoverToRiderOtp}
+          </div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+            Please share this OTP with the vendor to confirm handover of the racket.
+          </div>
         </div>
       );
     }
@@ -223,10 +215,6 @@ function RiderOrdersList({ rider, filter, onAction }) {
                 <div>Status: <b>{o.status}</b></div>
                 <div>Pickup Address: {o.pickupAddress || '-'}</div>
                 <div>Delivery Address: {o.deliveryAddress || '-'}</div>
-                {o.status === 'pending' && <div>Pickup OTP: {o.riderPickupOtp}</div>}
-                {o.status === 'picked' && <div>Delivery to Vendor OTP: {o.riderDeliveryToVendorOtp}</div>}
-                {o.status === 'vendor-completed-service-awaiting-rider-pickup' && <div>Pickup from Vendor OTP: {o.vendorHandoverToRiderOtp}</div>}
-                {o.status === 'out-for-delivery' && <div>Return to Customer OTP: {o.riderReturnOtp}</div>}
               </div>
               {actionBar(o)}
             </div>

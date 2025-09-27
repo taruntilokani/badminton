@@ -237,54 +237,28 @@ router.post('/:id/return-to-court', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // The riderReturnOtp is for the rider to confirm they have delivered the racket to the customer's court.
-    if (order.riderReturnOtp !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+    // The rider is entering the OTP provided by the customer to confirm delivery.
+    if (order.customerReturnOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP for customer return' });
     }
 
-    order.status = 'delivered'; // Racket delivered back to court
+    order.status = 'completed'; // Service cycle ends directly after rider confirms with customer OTP
     order.riderReturnToCourtTime = new Date(); // Rider time ends
+    order.customerCompletionTime = new Date(); // Set customer completion time
 
     // Calculate total rider time
     const riderPickupDuration = (order.riderDeliveryToVendorTime - order.riderPickupStartTime) / (1000 * 60);
     const riderReturnDurationCorrected = (order.riderReturnToCourtTime - order.vendorServiceEndTime) / (1000 * 60);
-
     order.totalRiderTime = riderPickupDuration + riderReturnDurationCorrected;
 
-    await order.save();
-
-    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} has been returned to the court and is ready for pickup. Please use your pickup OTP: ${order.customerReturnOtp}`);
-
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Customer picks up racket
-router.post('/:id/customer-pickup', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { otp } = req.body; // OTP for customer to pick up racket
-
-    const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (order.customerReturnOtp !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
-    }
-
-    order.status = 'completed'; // Service cycle ends
-    order.customerCompletionTime = new Date();
+    // Calculate total service time
     if (order.serviceTimerStart) {
       order.totalServiceTime = (order.customerCompletionTime - order.serviceTimerStart) / (1000 * 60);
     }
 
     await order.save();
 
-    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Service for order ${order._id} is now complete. Thank you!`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} has been returned and service is now complete. Thank you!`);
     console.log(`[ADMIN CONSOLE] Order ${order._id} completed. Total Service Time: ${order.totalServiceTime} mins, Total Rider Time: ${order.totalRiderTime} mins, Total Vendor Time: ${order.totalVendorTime} mins.`);
 
     res.json(order);
