@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LandingPage from './LandingPage'; // Import the new LandingPage component
 
 // --- API base ---
 const API_URL = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
@@ -349,7 +350,7 @@ function Home({ setView, onLogout }) {
     <div>
       <div style={{ color: '#333', marginBottom: 12 }}>Welcome.</div>
       <div style={{ display: 'grid', gap: 8 }}>
-        <button type="button" style={primaryBtn} onClick={() => setView('submit')}>Submit Repair Request</button>
+        <button type="button" style={primaryBtn} onClick={() => setView('landingPage')}>Submit Repair Request</button>
         <button type="button" style={secondaryBtn} onClick={() => setView('orders')}>My Orders</button>
         <button type="button" style={{ ...primaryBtn, background: '#b00020' }} onClick={onLogout}>Logout</button>
       </div>
@@ -357,7 +358,7 @@ function Home({ setView, onLogout }) {
   );
 }
 
-function SubmitRepairForm({ user, setView, onOrderCreated }) {
+function SubmitRepairForm({ user, setView, onOrderCreated, selectedService }) {
   const [vendors, setVendors] = useState([]);
   const [vendorId, setVendorId] = useState('');
   const [pickupAddress, setPickupAddress] = useState('');
@@ -385,6 +386,12 @@ function SubmitRepairForm({ user, setView, onOrderCreated }) {
     })();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (selectedService) {
+      setRacketDetails(`${selectedService.sport} - ${selectedService.serviceType}`);
+    }
+  }, [selectedService]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -579,6 +586,8 @@ function OrderDetail({ orderId, setView }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [pickupOtpInput, setPickupOtpInput] = useState(''); // State for customer's initial pickup OTP input
+  const [returnOtpInput, setReturnOtpInput] = useState(''); // State for customer's final return OTP input
 
   const baseFile = useMemo(() => API_URL, []);
 
@@ -614,6 +623,56 @@ function OrderDetail({ orderId, setView }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
+  const handleRiderPickupOtpVerification = async () => {
+    if (!pickupOtpInput) {
+      alert('Please enter the OTP provided by the rider for pickup.');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/pickup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: pickupOtpInput }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'OTP verification failed for pickup.');
+        return;
+      }
+      alert('Racket pickup confirmed!');
+      setPickupOtpInput('');
+      await load(); // Reload order details to reflect status change
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred during pickup OTP verification.');
+    }
+  };
+
+  const handleCustomerReturnOtpVerification = async () => {
+    if (!returnOtpInput) {
+      alert('Please enter the OTP provided by the rider for return.');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/customer-pickup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: returnOtpInput }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'OTP verification failed for return.');
+        return;
+      }
+      alert('Racket return confirmed!');
+      setReturnOtpInput('');
+      await load(); // Reload order details to reflect status change
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred during return OTP verification.');
+    }
+  };
+
   const payNow = async () => {
     try {
       const res = await fetch(`${API_URL}/api/orders/${orderId}/pay`, {
@@ -648,6 +707,64 @@ function OrderDetail({ orderId, setView }) {
             <div><b>Status:</b> {order.status}</div>
             <Timeline status={order.status} />
           </div>
+
+          {/* Customer OTP for Rider Pickup */}
+          {order.status === 'pending' && (
+            <div style={{ borderTop: `1px solid ${border}`, paddingTop: 8 }}>
+              <div style={{ fontSize: 13, color: '#111', fontWeight: 600, marginBottom: 6 }}>Rider Pickup OTP</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  placeholder="Enter OTP from Rider"
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={pickupOtpInput}
+                  onChange={(e) => setPickupOtpInput(e.target.value)}
+                  required
+                  disabled={order.status !== 'pending'} // Disable if not pending
+                />
+                <button
+                  type="button"
+                  style={{ ...primaryBtn, width: 'auto', marginTop: 0, padding: '10px 16px' }}
+                  onClick={handleRiderPickupOtpVerification}
+                  disabled={order.status !== 'pending'} // Disable if not pending
+                >
+                  Confirm Pickup
+                </button>
+              </div>
+              <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                Please enter the OTP provided by the rider to confirm racket pickup.
+              </div>
+            </div>
+          )}
+
+          {/* Customer OTP for Final Racket Return */}
+          {order.status === 'delivered' && (
+            <div style={{ borderTop: `1px solid ${border}`, paddingTop: 8 }}>
+              <div style={{ fontSize: 13, color: '#111', fontWeight: 600, marginBottom: 6 }}>Customer Return OTP</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  placeholder="Enter OTP from Rider"
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={returnOtpInput}
+                  onChange={(e) => setReturnOtpInput(e.target.value)}
+                  required
+                  disabled={order.status !== 'delivered'} // Disable if not delivered
+                />
+                <button
+                  type="button"
+                  style={{ ...primaryBtn, width: 'auto', marginTop: 0, padding: '10px 16px' }}
+                  onClick={handleCustomerReturnOtpVerification}
+                  disabled={order.status !== 'delivered'} // Disable if not delivered
+                >
+                  Confirm Return
+                </button>
+              </div>
+              <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                Please enter the OTP provided by the rider to confirm racket return.
+              </div>
+            </div>
+          )}
 
           <div style={{ fontSize: 13, color: '#333', display: 'grid', gap: 4 }}>
             <div><b>Pickup Address:</b> {order.pickupAddress || '-'}</div>
@@ -730,6 +847,7 @@ export default function App() {
   const [view, setView] = useState(localStorage.getItem('token') ? 'home' : 'login');
   const [user, setUser] = useState(loadStoredUser());
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [selectedService, setSelectedService] = useState(null); // New state for selected service
 
   const onLogout = () => {
     localStorage.removeItem('token');
@@ -737,6 +855,7 @@ export default function App() {
     setUser(null);
     setView('login');
     setSelectedOrderId(null);
+    setSelectedService(null); // Clear selected service on logout
   };
 
   return (
@@ -751,7 +870,8 @@ export default function App() {
         {view === 'signup' && <SignUpForm setView={setView} />}
         {view === 'reset' && <ResetPassword setView={setView} />}
         {view === 'home' && <Home setView={setView} onLogout={onLogout} />}
-        {view === 'submit' && <SubmitRepairForm user={user} setView={setView} onOrderCreated={setSelectedOrderId} />}
+        {view === 'landingPage' && <LandingPage setView={setView} onServiceSelect={setSelectedService} />}
+        {view === 'submit' && <SubmitRepairForm user={user} setView={setView} onOrderCreated={setSelectedOrderId} selectedService={selectedService} />}
         {view === 'orders' && user && <OrdersList user={user} setView={setView} setSelectedOrderId={setSelectedOrderId} />}
         {view === 'orderDetail' && selectedOrderId && <OrderDetail orderId={selectedOrderId} setView={setView} />}
       </div>

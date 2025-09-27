@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
   riderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Rider' },
-  status: { type: String, enum: ['pending', 'picked', 'in-progress', 'ready-for-delivery', 'delivered', 'completed'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'picked', 'in-progress', 'ready-for-delivery', 'out-for-delivery', 'delivered', 'completed', 'vendor-completed-service-awaiting-rider-pickup'], default: 'pending' },
   pickupAddress: String,
   deliveryAddress: String,
   racketDetails: String,
@@ -30,6 +30,7 @@ const orderSchema = new mongoose.Schema({
   vendorServiceEndTime: { type: Date },
   riderReturnToCourtTime: { type: Date },
   riderReturnOtp: { type: String },
+  vendorHandoverToRiderOtp: { type: String }, // New OTP for vendor to rider handover
   totalRiderTime: { type: Number },
   totalVendorTime: { type: Number },
   customerReturnOtp: { type: String },

@@ -113,6 +113,7 @@ function OrdersList({ vendor, filter, onAction }) {
 
   const [quoteVal, setQuoteVal] = useState({}); // orderId -> string
   const [quoteNotes, setQuoteNotes] = useState({});
+  const [otpInput, setOtpInput] = useState({}); // orderId -> otp value
 
   const proposeQuote = async (id) => {
     const amount = parseFloat(quoteVal[id]);
@@ -171,7 +172,60 @@ function OrdersList({ vendor, filter, onAction }) {
       alert(d.error || 'Complete failed');
       return;
     }
+    alert('Service marked as completed! Rider will pick up the racket soon.');
     await reload();
+  };
+
+  const handleRiderDeliveryToVendor = async (orderId) => {
+    const otp = otpInput[orderId];
+    if (!otp) {
+      alert('Please enter OTP');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/api/orders/${orderId}/deliver-to-vendor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'Delivery to vendor failed');
+        return;
+      }
+      alert('Racket delivered by rider successfully!');
+      setOtpInput((s) => ({ ...s, [orderId]: '' }));
+      await reload();
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred during delivery to vendor.');
+    }
+  };
+
+  const handleVendorHandoverToRider = async (orderId) => {
+    const otp = otpInput[orderId];
+    if (!otp) {
+      alert('Please enter OTP');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/api/orders/${orderId}/vendor-handover-to-rider`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'Handover to rider failed');
+        return;
+      }
+      alert('Racket handed over to rider successfully!');
+      setOtpInput((s) => ({ ...s, [orderId]: '' }));
+      await reload();
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred during handover to rider.');
+    }
   };
 
   const actionBar = (o) => {
@@ -216,8 +270,26 @@ function OrdersList({ vendor, filter, onAction }) {
       );
     }
     // Status actions
+    if (o.status === 'picked') {
+      return (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <input
+            type="text"
+            placeholder="OTP from Rider"
+            value={otpInput[o._id] || ''}
+            onChange={(e) => setOtpInput((s) => ({ ...s, [o._id]: e.target.value }))}
+            style={{ flex: 1, padding: 8, borderRadius: 6, border: `1px solid ${border}`, fontSize: 14 }}
+          />
+          <button type="button" onClick={() => handleRiderDeliveryToVendor(o._id)} style={{ background: accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
+            Confirm Delivery
+          </button>
+        </div>
+      );
+    }
     const canStart = o.status === 'in-progress' && !o.vendorServiceStartTime;
     const canComplete = o.status === 'in-progress' && o.vendorServiceStartTime && !o.vendorServiceEndTime;
+    const canHandover = o.status === 'vendor-completed-service-awaiting-rider-pickup';
+
     return (
       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {canStart && (
@@ -229,6 +301,20 @@ function OrdersList({ vendor, filter, onAction }) {
           <button type="button" onClick={() => markComplete(o._id)} style={{ background: '#6a1b9a', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
             Mark Completed
           </button>
+        )}
+        {canHandover && (
+          <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+            <input
+              type="text"
+              placeholder="OTP from Rider"
+              value={otpInput[o._id] || ''}
+              onChange={(e) => setOtpInput((s) => ({ ...s, [o._id]: e.target.value }))}
+              style={{ flex: 1, padding: 8, borderRadius: 6, border: `1px solid ${border}`, fontSize: 14 }}
+            />
+            <button type="button" onClick={() => handleVendorHandoverToRider(o._id)} style={{ background: accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>
+              Confirm Handover
+            </button>
+          </div>
         )}
       </div>
     );
@@ -257,6 +343,8 @@ function OrdersList({ vendor, filter, onAction }) {
                 <div>Price: {money(o.price)}</div>
                 <div>Payment: {o.paymentStatus || '-'}</div>
                 {o.vendorNotes ? <div>Vendor Notes: {o.vendorNotes}</div> : null}
+                {o.status === 'picked' && <div>Rider Delivery OTP: {o.riderDeliveryToVendorOtp}</div>}
+                {o.status === 'vendor-completed-service-awaiting-rider-pickup' && <div>Rider Pickup OTP: {o.vendorHandoverToRiderOtp}</div>}
                 <div style={{ marginTop: 4, fontSize: 12, color: '#555' }}>
                   Pickup: {o.pickupAddress || '-'} | Delivery: {o.deliveryAddress || '-'}
                 </div>
@@ -387,6 +475,8 @@ function VendorDashboard({ vendor, onLogout }) {
                 <option value="picked">picked</option>
                 <option value="in-progress">in-progress</option>
                 <option value="ready-for-delivery">ready-for-delivery</option>
+                <option value="out-for-delivery">out-for-delivery</option>
+                <option value="vendor-completed-service-awaiting-rider-pickup">vendor-completed-service-awaiting-rider-pickup</option>
                 <option value="delivered">delivered</option>
                 <option value="completed">completed</option>
               </select>

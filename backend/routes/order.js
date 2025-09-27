@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/order');
+const Rider = require('../models/rider'); // Import Rider model
 const otpService = require('../../customer_backend/services/otpService'); // Adjust path as needed
 const multer = require('multer');
 const path = require('path');
@@ -52,6 +53,33 @@ router.post('/', upload.single('racketImage'), async (req, res) => {
     // Generate OTP for rider pickup
     const riderPickupOtp = otpService.generateOTP();
     order.riderPickupOtp = riderPickupOtp;
+
+    // Assign a rider
+    let assignedRider = null;
+    const riders = await Rider.find();
+    if (riders.length > 0) {
+      assignedRider = riders[Math.floor(Math.random() * riders.length)];
+    } else {
+      // If no riders exist, create a default rider for testing purposes
+      console.warn('No riders available. Creating a default rider.');
+      const DefaultRider = require('../models/rider'); // Ensure Rider model is imported
+      assignedRider = new DefaultRider({
+        name: 'Default Rider',
+        email: 'rider@example.com',
+        phone: '1234567890',
+        password: 'password123', // In a real app, hash this password
+        vehicleDetails: 'Bike - XYZ123',
+        availability: true,
+      });
+      await assignedRider.save();
+      console.log('Default rider created:', assignedRider._id);
+    }
+
+    if (assignedRider) {
+      order.riderId = assignedRider._id;
+    } else {
+      return res.status(500).json({ error: 'Failed to assign a rider to the order.' });
+    }
 
     await order.save();
 
@@ -136,22 +164,19 @@ router.post('/:id/service-complete', async (req, res) => {
     }
 
     order.vendorServiceEndTime = new Date(); // Vendor time stops
-    // Rider time resumes from vendorServiceEndTime; final end time will be set on return-to-court
 
     // Calculate total vendor time in minutes
     const vendorServiceDuration = (order.vendorServiceEndTime - order.vendorServiceStartTime) / (1000 * 60);
     order.totalVendorTime = vendorServiceDuration;
 
-    // Calculate total rider time (pickup to delivery to vendor)
-    const riderPickupDuration = (order.riderDeliveryToVendorTime - order.riderPickupStartTime) / (1000 * 60);
-    // We will add the return trip time later when the rider delivers back to court.
-    // For now, we'll just store the pickup duration.
-    // order.totalRiderTime = riderPickupDuration; // This will be updated later
+    // Update status to indicate service is done and awaiting rider pickup from vendor
+    order.status = 'vendor-completed-service-awaiting-rider-pickup';
 
-    // Update status to indicate service is done and ready for return delivery
-    order.status = 'ready-for-delivery'; // A new status might be needed
+    // Generate OTP for vendor to rider handover
+    const vendorHandoverToRiderOtp = otpService.generateOTP();
+    order.vendorHandoverToRiderOtp = vendorHandoverToRiderOtp;
 
-    // Generate OTP for customer pickup and rider return confirmation
+    // Generate OTP for customer pickup and rider return confirmation (these are for the final delivery to customer)
     const customerReturnOtp = otpService.generateOTP();
     order.customerReturnOtp = customerReturnOtp;
 
@@ -160,8 +185,8 @@ router.post('/:id/service-complete', async (req, res) => {
 
     await order.save();
 
-    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} is ready for delivery! Pickup OTP: ${customerReturnOtp}`);
-    console.log(`[NOTIFICATION] To Rider ${order.riderId}: Racket for order ${order._id} is ready for return delivery. Use OTP: ${riderReturnOtp} to confirm return to court.`);
+    console.log(`[NOTIFICATION] To Rider ${order.riderId}: Racket for order ${order._id} is ready for pickup from vendor. OTP for handover: ${vendorHandoverToRiderOtp}`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} is ready for delivery!`);
 
     res.json(order);
   } catch (err) {
@@ -169,7 +194,39 @@ router.post('/:id/service-complete', async (req, res) => {
   }
 });
 
-// Rider returns racket to court
+// New endpoint: Vendor confirms handover to rider (rider picks up from vendor)
+router.post('/:id/vendor-handover-to-rider', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { otp } = req.body; // OTP for vendor to confirm handover to rider
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.vendorHandoverToRiderOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP for vendor handover' });
+    }
+
+    order.status = 'out-for-delivery'; // Racket is now out for delivery to customer
+    // Rider time resumes from vendorServiceEndTime; final end time will be set on return-to-court
+    // No need to set riderPickupStartTime here, as it was set when rider picked up from customer.
+    // The time from vendorServiceEndTime to riderReturnToCourtTime will be the return trip duration.
+
+    await order.save();
+
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} is now out for delivery!`);
+    console.log(`[NOTIFICATION] To Rider ${order.riderId}: You have picked up order ${order._id} from the vendor. Please deliver to customer. Customer pickup OTP: ${order.customerReturnOtp}`);
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Rider returns racket to court (delivers to customer)
 router.post('/:id/return-to-court', async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,6 +237,7 @@ router.post('/:id/return-to-court', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    // The riderReturnOtp is for the rider to confirm they have delivered the racket to the customer's court.
     if (order.riderReturnOtp !== otp) {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
@@ -189,7 +247,6 @@ router.post('/:id/return-to-court', async (req, res) => {
 
     // Calculate total rider time
     const riderPickupDuration = (order.riderDeliveryToVendorTime - order.riderPickupStartTime) / (1000 * 60);
-    // Correcting the calculation for riderReturnDuration
     const riderReturnDurationCorrected = (order.riderReturnToCourtTime - order.vendorServiceEndTime) / (1000 * 60);
 
     order.totalRiderTime = riderPickupDuration + riderReturnDurationCorrected;
@@ -524,10 +581,11 @@ router.get('/:id/summary', async (req, res) => {
 // Get all orders
 router.get('/', async (req, res) => {
   try {
-    const { customerId, vendorId, status } = req.query;
+    const { customerId, vendorId, riderId, status } = req.query;
     const query = {};
     if (customerId) query.customerId = customerId;
     if (vendorId) query.vendorId = vendorId;
+    if (riderId) query.riderId = riderId; // Add riderId to query
     if (status) query.status = status;
 
     const orders = await Order.find(query).sort({ createdAt: -1 });
