@@ -3,10 +3,22 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+// Ensure upload directories exist
+['uploads', path.join('uploads', 'evidence')].forEach((dir) => {
+  try {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  } catch (e) {
+    console.error('Failed to ensure directory', dir, e);
+  }
+});
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads')); // Serve uploaded images
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL || 'mongodb://db:27017/badminton', {

@@ -219,6 +219,36 @@ router.post('/:id/customer-pickup', async (req, res) => {
   }
 });
 
+/**
+ * Payment initiation (stub) - marks order as paid and stores a payment reference
+ */
+router.post('/:id/pay', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentReference } = req.body || {};
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.json(order); // idempotent
+    }
+
+    order.paymentReference = paymentReference || `STUB-${Date.now()}`;
+    order.paymentStatus = 'paid';
+    await order.save();
+
+    // TODO: Integrate with real payment gateway, verify signature, amount, etc.
+    console.log(`Payment recorded for order ${order._id}. Ref: ${order.paymentReference}`);
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Rider pickup evidence upload
 router.post('/:id/pickup-evidence', configureMulter('uploads/evidence/', 'pickupEvidenceImage'), async (req, res) => {
   try {
@@ -320,6 +350,22 @@ router.post('/:id/customer-pickup-evidence', configureMulter('uploads/evidence/'
 });
 
 /**
+ * Get full order detail (safe for customer tracking)
+ */
+router.get('/:id/detail', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const o = await Order.findById(id);
+    if (!o) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(o);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * Order summary for a single order (for customer/admin views)
  */
 router.get('/:id/summary', async (req, res) => {
@@ -375,7 +421,13 @@ router.get('/:id/summary', async (req, res) => {
 // Get all orders
 router.get('/', async (req, res) => {
   try {
-    const orders = await Order.find();
+    const { customerId, vendorId, status } = req.query;
+    const query = {};
+    if (customerId) query.customerId = customerId;
+    if (vendorId) query.vendorId = vendorId;
+    if (status) query.status = status;
+
+    const orders = await Order.find(query).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });

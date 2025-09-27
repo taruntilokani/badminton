@@ -61,7 +61,7 @@ services:
     environment:
       - MONGO_URL=mongodb://db:27017/badminton
     volumes:
-      - ./uploads:/usr/src/app/uploads # Volume for image uploads
+      - ./uploads:/app/uploads # Volume for image uploads
     depends_on:
       - db
   db:

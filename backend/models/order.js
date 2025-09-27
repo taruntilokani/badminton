@@ -9,6 +9,9 @@ const orderSchema = new mongoose.Schema({
   pickupAddress: String,
   deliveryAddress: String,
   racketDetails: String,
+  preferredPickupTime: { type: Date },
+  preferredDeliveryTime: { type: Date },
+  notes: String,
   price: Number,
   serviceTimerStart: { type: Date },
   riderPickupStartTime: { type: Date },
@@ -30,6 +33,7 @@ const orderSchema = new mongoose.Schema({
   customerCompletionTime: { type: Date },
   totalServiceTime: { type: Number },
   racketImage: String, // To store the path to the uploaded image
+  paymentReference: String,
   paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });
