@@ -249,6 +249,92 @@ router.post('/:id/pay', async (req, res) => {
   }
 });
 
+/**
+ * Vendor proposes a quote
+ */
+router.post('/:id/quote', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, notes } = req.body || {};
+    if (amount == null) {
+      return res.status(400).json({ error: 'amount is required' });
+    }
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    order.quoteAmount = Number(amount);
+    order.vendorNotes = notes || order.vendorNotes;
+    order.quoteStatus = 'proposed';
+    // For simplicity, align base price with proposed quote
+    order.price = Number(amount);
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Vendor accepts job
+ */
+router.post('/:id/vendor-accept', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    order.quoteStatus = 'accepted';
+    if ((order.price == null || Number.isNaN(order.price)) && order.quoteAmount != null) {
+      order.price = order.quoteAmount;
+    }
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Vendor rejects job
+ */
+router.post('/:id/vendor-reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    order.quoteStatus = 'rejected';
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Vendor marks repair started
+ */
+router.post('/:id/vendor-start', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    order.status = 'in-progress';
+    if (!order.vendorServiceStartTime) {
+      order.vendorServiceStartTime = new Date();
+    }
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Rider pickup evidence upload
 router.post('/:id/pickup-evidence', configureMulter('uploads/evidence/', 'pickupEvidenceImage'), async (req, res) => {
   try {
