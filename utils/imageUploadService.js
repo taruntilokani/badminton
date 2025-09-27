@@ -14,17 +14,17 @@ const configureMulter = (destinationFolder = 'uploads/', fieldName = 'image') =>
   });
 
   // Optional: Add file filter for image types if needed
-  // const fileFilter = (req, file, cb) => {
-  //   if (file.mimetype.startsWith('image/')) {
-  //     cb(null, true);
-  //   } else {
-  //     cb(new Error('Only image files are allowed!'), false);
-  //   }
-  // };
+  const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  };
 
   const upload = multer({
     storage: storage,
-    // fileFilter: fileFilter, // Uncomment to add file type validation
+    fileFilter: fileFilter, // Uncomment to add file type validation
     limits: {
       fileSize: 1024 * 1024 * 5 // Limit file size to 5MB
     }
@@ -34,4 +34,4 @@ const configureMulter = (destinationFolder = 'uploads/', fieldName = 'image') =>
   return upload.single(fieldName);
 };
 
-module.exports = { configureMulter };
+module.exports = configureMulter; // Default export for convenience

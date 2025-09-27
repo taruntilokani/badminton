@@ -70,6 +70,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+  image-upload-service:
+    build: ./image-upload-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads # Volume for image uploads
   customer-backend:
     build: ./customer_backend
     ports:

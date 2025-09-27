@@ -1,43 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/order');
-const { configureMulter } = require('../../utils/imageUploadService'); // Import the generic service
+const otpService = require('../../customer_backend/services/otpService'); // Adjust path as needed
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// Configure multer for the initial order submission (racket photo)
-const uploadRacketPhoto = configureMulter('uploads/', 'racketImage');
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer configuration for image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only images (jpeg, jpg, png, gif) are allowed'));
+  },
+});
 
 // Create order
-router.post('/', uploadRacketPhoto, async (req, res) => { // Use the configured multer middleware
+router.post('/', upload.single('racketImage'), async (req, res) => {
   try {
+    // req.body will now be populated by multer for text fields
+    // req.file will contain the uploaded file information
     const order = new Order(req.body);
     order.serviceTimerStart = new Date(); // Start customer service timer
 
-    // Handle image upload
     if (req.file) {
-      order.racketImage = req.file.path; // Save the path of the uploaded image
+      order.racketImage = `/uploads/${req.file.filename}`; // Save the path of the uploaded image
     }
 
     // Generate OTP for rider pickup
-    // In a real application, this would use a service to generate and send OTPs (e.g., via SMS)
-    const riderPickupOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const riderPickupOtp = otpService.generateOTP();
     order.riderPickupOtp = riderPickupOtp;
 
     await order.save();
 
     // Simulate notification to rider and vendor
-    console.log(`[NOTIFICATION] New order ${order._id} submitted by customer ${order.customerId}.`);
-    console.log(`[NOTIFICATION] Rider ${order.riderId} notified for pickup at ${order.pickupAddress}. OTP: ${riderPickupOtp}`);
-    console.log(`[NOTIFICATION] Vendor ${order.vendorId} notified about new order ${order._id}.`);
+    console.log(`[NOTIFICATION] To Rider ${order.riderId}: New order ${order._id} submitted by customer ${order.customerId}. Please pick up at ${order.pickupAddress}. OTP for pickup: ${riderPickupOtp}`);
+    console.log(`[NOTIFICATION] To Vendor ${order.vendorId}: New order ${order._id} has been submitted. Racket will be delivered by rider.`);
 
     res.status(201).json(order);
   } catch (err) {
-    // If there's an error during file upload or saving, clean up the uploaded file
-    if (req.file) {
-      const fs = require('fs');
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error('Error cleaning up uploaded file:', unlinkErr);
-      });
-    }
     res.status(400).json({ error: err.message });
   }
 });
@@ -61,14 +84,12 @@ router.post('/:id/pickup', async (req, res) => {
     order.riderPickupStartTime = new Date(); // Rider time starts
 
     // Generate OTP for delivery to vendor
-    // In a real application, this would use a service to generate and send OTPs (e.g., via SMS)
-    const riderDeliveryToVendorOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const riderDeliveryToVendorOtp = otpService.generateOTP();
     order.riderDeliveryToVendorOtp = riderDeliveryToVendorOtp; // Correctly assign to riderDeliveryToVendorOtp
 
     await order.save();
 
-    // TODO: Implement notification service to notify vendor, and send OTP to vendor
-    console.log(`Rider picked up order ${order._id}. Notifying vendor. Delivery to vendor OTP: ${riderDeliveryToVendorOtp}`);
+    console.log(`[NOTIFICATION] To Vendor ${order.vendorId}: Racket for order ${order._id} is en route. Rider will deliver with OTP: ${riderDeliveryToVendorOtp}`);
 
     res.json(order);
   } catch (err) {
@@ -96,8 +117,7 @@ router.post('/:id/deliver-to-vendor', async (req, res) => {
     order.vendorServiceStartTime = new Date(); // Vendor time starts
     await order.save();
 
-    // TODO: Implement notification service to notify customer that racket is with vendor
-    console.log(`Order ${order._id} delivered to vendor. Vendor service started.`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} has been delivered to the vendor. Service is now in progress.`);
 
     res.json(order);
   } catch (err) {
@@ -132,18 +152,16 @@ router.post('/:id/service-complete', async (req, res) => {
     order.status = 'ready-for-delivery'; // A new status might be needed
 
     // Generate OTP for customer pickup and rider return confirmation
-    // In a real application, this would use a service to generate and send OTPs (e.g., via SMS)
-    const customerReturnOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const customerReturnOtp = otpService.generateOTP();
     order.customerReturnOtp = customerReturnOtp;
 
-    const riderReturnOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const riderReturnOtp = otpService.generateOTP();
     order.riderReturnOtp = riderReturnOtp;
 
     await order.save();
 
-    // TODO: Implement notification service to notify customer that racket is ready for delivery and send OTP
-    // TODO: Implement notification service to notify rider with return OTP
-    console.log(`Order ${order._id} service completed. Vendor time: ${order.totalVendorTime} mins. Rider time resumes. Customer pickup OTP: ${customerReturnOtp}, Rider return OTP: ${riderReturnOtp}`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} is ready for delivery! Pickup OTP: ${customerReturnOtp}`);
+    console.log(`[NOTIFICATION] To Rider ${order.riderId}: Racket for order ${order._id} is ready for return delivery. Use OTP: ${riderReturnOtp} to confirm return to court.`);
 
     res.json(order);
   } catch (err) {
@@ -178,8 +196,7 @@ router.post('/:id/return-to-court', async (req, res) => {
 
     await order.save();
 
-    // TODO: Implement notification service to notify customer that racket is ready for pickup
-    console.log(`Order ${order._id} returned to court. Total rider time: ${order.totalRiderTime} mins.`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Your racket for order ${order._id} has been returned to the court and is ready for pickup. Please use your pickup OTP: ${order.customerReturnOtp}`);
 
     res.json(order);
   } catch (err) {
@@ -210,8 +227,8 @@ router.post('/:id/customer-pickup', async (req, res) => {
 
     await order.save();
 
-    // TODO: Implement notification service to notify customer that service is complete
-    console.log(`Order ${order._id} picked up by customer. Service complete.`);
+    console.log(`[NOTIFICATION] To Customer ${order.customerId}: Service for order ${order._id} is now complete. Thank you!`);
+    console.log(`[ADMIN CONSOLE] Order ${order._id} completed. Total Service Time: ${order.totalServiceTime} mins, Total Rider Time: ${order.totalRiderTime} mins, Total Vendor Time: ${order.totalVendorTime} mins.`);
 
     res.json(order);
   } catch (err) {
@@ -336,7 +353,7 @@ router.post('/:id/vendor-start', async (req, res) => {
 });
 
 // Rider pickup evidence upload
-router.post('/:id/pickup-evidence', configureMulter('uploads/evidence/', 'pickupEvidenceImage'), async (req, res) => {
+router.post('/:id/pickup-evidence', async (req, res) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -344,8 +361,8 @@ router.post('/:id/pickup-evidence', configureMulter('uploads/evidence/', 'pickup
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.file) {
-      order.pickupEvidenceImage = req.file.path;
+    if (req.body.pickupEvidenceImage) {
+      order.pickupEvidenceImage = req.body.pickupEvidenceImage;
     }
 
     await order.save();
@@ -356,7 +373,7 @@ router.post('/:id/pickup-evidence', configureMulter('uploads/evidence/', 'pickup
 });
 
 // Rider delivery to vendor evidence upload
-router.post('/:id/delivery-evidence', configureMulter('uploads/evidence/', 'deliveryToVendorEvidenceImage'), async (req, res) => {
+router.post('/:id/delivery-evidence', async (req, res) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -364,8 +381,8 @@ router.post('/:id/delivery-evidence', configureMulter('uploads/evidence/', 'deli
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.file) {
-      order.deliveryToVendorEvidenceImage = req.file.path;
+    if (req.body.deliveryToVendorEvidenceImage) {
+      order.deliveryToVendorEvidenceImage = req.body.deliveryToVendorEvidenceImage;
     }
 
     await order.save();
@@ -376,7 +393,7 @@ router.post('/:id/delivery-evidence', configureMulter('uploads/evidence/', 'deli
 });
 
 // Vendor service completion evidence upload
-router.post('/:id/service-evidence', configureMulter('uploads/evidence/', 'serviceCompleteEvidenceImage'), async (req, res) => {
+router.post('/:id/service-evidence', async (req, res) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -384,8 +401,8 @@ router.post('/:id/service-evidence', configureMulter('uploads/evidence/', 'servi
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.file) {
-      order.serviceCompleteEvidenceImage = req.file.path;
+    if (req.body.serviceCompleteEvidenceImage) {
+      order.serviceCompleteEvidenceImage = req.body.serviceCompleteEvidenceImage;
     }
 
     await order.save();
@@ -396,7 +413,7 @@ router.post('/:id/service-evidence', configureMulter('uploads/evidence/', 'servi
 });
 
 // Rider return to court evidence upload
-router.post('/:id/return-evidence', configureMulter('uploads/evidence/', 'returnToCourtEvidenceImage'), async (req, res) => {
+router.post('/:id/return-evidence', async (req, res) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -404,8 +421,8 @@ router.post('/:id/return-evidence', configureMulter('uploads/evidence/', 'return
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.file) {
-      order.returnToCourtEvidenceImage = req.file.path;
+    if (req.body.returnToCourtEvidenceImage) {
+      order.returnToCourtEvidenceImage = req.body.returnToCourtEvidenceImage;
     }
 
     await order.save();
@@ -416,7 +433,7 @@ router.post('/:id/return-evidence', configureMulter('uploads/evidence/', 'return
 });
 
 // Customer pickup evidence upload
-router.post('/:id/customer-pickup-evidence', configureMulter('uploads/evidence/', 'customerPickupEvidenceImage'), async (req, res) => {
+router.post('/:id/customer-pickup-evidence', async (req, res) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -424,8 +441,8 @@ router.post('/:id/customer-pickup-evidence', configureMulter('uploads/evidence/'
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.file) {
-      order.customerPickupEvidenceImage = req.file.path;
+    if (req.body.customerPickupEvidenceImage) {
+      order.customerPickupEvidenceImage = req.body.customerPickupEvidenceImage;
     }
 
     await order.save();

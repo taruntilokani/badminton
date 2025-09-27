@@ -348,6 +348,12 @@ app.get('/requests/:id', (req, res) => {
     }
 });
 
+// New endpoint to generate and provide an OTP
+app.post('/generate-otp', (req, res) => {
+  const otp = generateOTP();
+  res.json({ otp: otp });
+});
+
 // Endpoint to get all requests (for admin console)
 app.get('/requests', (req, res) => {
   res.json(requests);
