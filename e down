@@ -1,0 +1,83 @@
+[33mcommit 9a01e9117ae4c0218d90456bd1465260b953a471[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Sat Sep 27 20:22:12 2025 +0000
+
+    Complete flow is working as expected
+
+[33mcommit ab27c2f2d276b25940e1ee720d13260aff3af8b7[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Sat Sep 27 19:38:12 2025 +0000
+
+    Service Working flow completed
+
+[33mcommit 55ba392c3824aa51daeec4374f864545ea3e6bb5[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Sat Sep 27 18:51:53 2025 +0000
+
+    working on flow
+
+[33mcommit 833581c9a180e7abd20ee9e18bd229bf824e599b[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Sat Sep 27 17:16:39 2025 +0000
+
+    Login working fine
+
+[33mcommit 4ee943d19d085f621d556999cd5a94592f81f1db[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Sat Sep 27 19:40:59 2025 +0530
+
+    Customer request submission_1
+
+[33mcommit 5aec80d9f93b67cf68e9f217f85305e6107d55ed[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Sat Sep 27 19:26:44 2025 +0530
+
+    Customer request submission
+
+[33mcommit 9ab2d9f6220fc8dbf8a4552e0e89ad42480db03c[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Thu Sep 25 23:36:34 2025 +0530
+
+    Service flow first push
+
+[33mcommit 441055ece07eadad71c9c82f7643a2024580319e[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Thu Sep 25 23:18:52 2025 +0530
+
+    Fixed singup issues
+
+[33mcommit 66288a4201c20d70067323bda96699975eea9851[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Thu Sep 25 22:52:40 2025 +0530
+
+    Create Login form
+
+[33mcommit fd5298be3e4f29e4712186977bea8085c99a6ae7[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Thu Sep 25 22:23:49 2025 +0530
+
+    Conflicts error fixed
+
+[33mcommit d8b901bb07b2b9d6860fcdc6743cc9888a09a1a6[m
+Author: Tarun Tilokani <tarun.tilokani@oracle.com>
+Date:   Thu Sep 25 21:44:37 2025 +0530
+
+    Login setup for Vendor,customer,Rider,Admin
+
+[33mcommit 394529a1a2eaffbbc3740431890714fa9a3fabb2[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Tue Sep 23 15:56:05 2025 +0000
+
+    Image upload is fixed
+
+[33mcommit 777543b79cd4ab3fd44566f0c9ed670a26ff9d85[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Mon Sep 22 16:16:57 2025 +0000
+
+    First push
+
+[33mcommit 3196038e9766c6ff2e19f9898db6ba9d5960f6b4[m
+Author: Tarun Tilokani <taruntilokani@gmail.com>
+Date:   Thu Sep 18 14:44:16 2025 +0000
+
+    First Push of badminton project

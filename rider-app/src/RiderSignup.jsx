@@ -12,6 +12,8 @@ function RiderSignup({ onSuccess }) {
     email: '',
     phone: '',
     vehicle: '',
+    password: '',
+    confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -25,24 +27,28 @@ function RiderSignup({ onSuccess }) {
     e.preventDefault();
     setErr('');
     setMsg('');
-    if (!form.name || !form.email || !form.phone || !form.vehicle) {
+    if (!form.name || !form.email || !form.phone || !form.vehicle || !form.password || !form.confirmPassword) {
       setErr('All fields are required.');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setErr('Passwords do not match.');
       return;
     }
     setLoading(true);
     try {
-      const baseUrl = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:4000`;
-      const res = await fetch(`${baseUrl}/api/riders`, {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://backend:4000';
+      const res = await fetch(`${baseUrl}/api/riders/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, vehicle: form.vehicle, password: form.password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Signup failed with status ${res.status}`);
       }
       setMsg('Rider account created successfully.');
-      setForm({ name: '', email: '', phone: '', vehicle: '' });
+      setForm({ name: '', email: '', phone: '', vehicle: '', password: '', confirmPassword: '' });
       if (onSuccess) onSuccess();
     } catch (e2) {
       setErr(e2.message);
@@ -84,6 +90,22 @@ function RiderSignup({ onSuccess }) {
           type="text"
           placeholder="Vehicle (e.g., Bike, Scooter)"
           value={form.vehicle}
+          onChange={handleChange}
+          style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg }}
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg }}
+        />
+        <input
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm Password"
+          value={form.confirmPassword}
           onChange={handleChange}
           style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg }}
         />

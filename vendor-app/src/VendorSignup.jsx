@@ -13,6 +13,8 @@ function VendorSignup({ onSuccess }) {
     phone: '',
     address: '',
     shopName: '',
+    password: '',
+    confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -27,24 +29,28 @@ function VendorSignup({ onSuccess }) {
     setErr('');
     setMsg('');
     // Basic validation
-    if (!form.name || !form.email || !form.phone || !form.address || !form.shopName) {
+    if (!form.name || !form.email || !form.phone || !form.address || !form.shopName || !form.password || !form.confirmPassword) {
       setErr('All fields are required.');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setErr('Passwords do not match.');
       return;
     }
     setLoading(true);
     try {
-      const baseUrl = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:4000`;
-      const res = await fetch(`${baseUrl}/api/vendors`, {
+const baseUrl = process.env.REACT_APP_API_URL || 'http://backend:4000';
+      const res = await fetch(`${baseUrl}/api/vendors/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, address: form.address, shopName: form.shopName, password: form.password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Signup failed with status ${res.status}`);
       }
       setMsg('Vendor account created successfully.');
-      setForm({ name: '', email: '', phone: '', address: '', shopName: '' });
+      setForm({ name: '', email: '', phone: '', address: '', shopName: '', password: '', confirmPassword: '' });
       if (onSuccess) onSuccess();
     } catch (e2) {
       setErr(e2.message);
@@ -96,6 +102,22 @@ function VendorSignup({ onSuccess }) {
           onChange={handleChange}
           rows={3}
           style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg, resize: 'vertical' }}
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg }}
+        />
+        <input
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm Password"
+          value={form.confirmPassword}
+          onChange={handleChange}
+          style={{ padding: 12, borderRadius: 8, border: `1px solid ${border}`, fontSize: 16, background: cardBg }}
         />
         {err && <div style={{ color: '#d32f2f', fontWeight: 500 }}>{err}</div>}
         {msg && <div style={{ color: '#2e7d32', fontWeight: 500 }}>{msg}</div>}

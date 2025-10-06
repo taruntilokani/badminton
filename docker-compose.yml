@@ -4,7 +4,7 @@ services:
     build: ./customer-app
     environment:
       - HOST=0.0.0.0
-      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_HOST=0.0.0.0
       - WDS_SOCKET_PORT=3000
       - WDS_SOCKET_PATH=/ws
       - CHOKIDAR_USEPOLLING=true
@@ -17,8 +17,9 @@ services:
     build: ./vendor-app
     environment:
       - HOST=0.0.0.0
-      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_HOST=0.0.0.0
       - WDS_SOCKET_PORT=3001
+      - PORT=3001
       - WDS_SOCKET_PATH=/ws
       - CHOKIDAR_USEPOLLING=true
       - REACT_APP_API_URL=http://localhost:4000
@@ -30,7 +31,7 @@ services:
     build: ./rider-app
     environment:
       - HOST=0.0.0.0
-      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_HOST=0.0.0.0
       - WDS_SOCKET_PORT=3002
       - WDS_SOCKET_PATH=/ws
       - CHOKIDAR_USEPOLLING=true
@@ -43,7 +44,7 @@ services:
     build: ./admin-app
     environment:
       - HOST=0.0.0.0
-      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_HOST=0.0.0.0
       - WDS_SOCKET_PORT=3003
       - WDS_SOCKET_PATH=/ws
       - CHOKIDAR_USEPOLLING=true
@@ -85,5 +86,14 @@ services:
       - db
     volumes:
       - ./customer_backend/uploads:/usr/src/app/uploads # Added volume mapping for uploads
+  portainer:
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
 volumes:
   mongo-data:
+  portainer_data:

@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken');
 // User registration
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, phone, address, role, password } = req.body;
+    const { name, email, phone, address, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, phone, address, role, password: hashedPassword });
+    const user = new User({ name, email, phone, address, role: 'customer', password: hashedPassword }); // Force role to 'customer'
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (err) {

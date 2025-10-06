@@ -7,6 +7,8 @@ const vendorSchema = new mongoose.Schema({
   phone: String,
   address: String,
   shopName: String,
+  password: { type: String, required: true },
+  role: { type: String, default: 'vendor' },
   createdAt: { type: Date, default: Date.now }
 });
 

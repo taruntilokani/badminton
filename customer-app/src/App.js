@@ -197,7 +197,6 @@ function SignUpForm({ setView }) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [role, setRole] = useState('customer');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -213,7 +212,7 @@ function SignUpForm({ setView }) {
       const response = await fetch(`${API_URL}/api/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, address, role, password }),
+        body: JSON.stringify({ name, email, phone, address, password }), // Removed role
       });
 
       if (!response.ok) {
@@ -273,19 +272,6 @@ function SignUpForm({ setView }) {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
         />
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <label style={labelStyle}>Role</label>
-        <select
-          style={{ ...inputStyle, height: 40 }}
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="customer">Customer</option>
-          <option value="vendor">Vendor</option>
-          <option value="rider">Rider</option>
-          <option value="admin">Admin</option>
-        </select>
       </div>
       <div style={{ marginTop: 12 }}>
         <label style={labelStyle}>Password</label>
@@ -654,7 +640,7 @@ function OrderDetail({ orderId, setView }) {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/orders/${orderId}/customer-pickup`, {
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/return-to-court`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ otp: returnOtpInput }),

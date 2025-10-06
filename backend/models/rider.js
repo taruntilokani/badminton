@@ -6,6 +6,8 @@ const riderSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   phone: String,
   vehicle: String,
+  password: { type: String, required: true },
+  role: { type: String, default: 'rider' },
   createdAt: { type: Date, default: Date.now }
 });
 

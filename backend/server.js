@@ -20,8 +20,8 @@ mongoose.connect(process.env.MONGO_URL || 'mongodb://db:27017/badminton', {
 app.get('/', (req, res) => res.send('Badminton Racket Repair Service API'));
 app.use('/api/orders', require('./routes/order'));
 app.use('/api/users', require('./routes/user'));
-app.use('/api/vendors', require('./routes/vendor'));
-app.use('/api/riders', require('./routes/rider'));
+app.use('/api/vendors', require('./routes/vendor')); // This will now handle /api/vendors/register and /api/vendors/login
+app.use('/api/riders', require('./routes/rider')); // This will now handle /api/riders/register and /api/riders/login
 app.use('/api/admin', require('./routes/admin'));
 
 const PORT = process.env.PORT || 4000;
