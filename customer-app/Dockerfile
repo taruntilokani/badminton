@@ -1,8 +1,6 @@
 # Customer App Dockerfile
-FROM node:18-alpine
+FROM taruntilokani/badminton:customer-app
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 COPY . .
 EXPOSE 3000
 CMD ["npm", "start"]

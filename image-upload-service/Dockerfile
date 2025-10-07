@@ -1,7 +1,5 @@
-FROM node:18-alpine
+FROM taruntilokani/badminton:image-upload-service
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 COPY . .
 EXPOSE 5000
 CMD ["npm", "start"]

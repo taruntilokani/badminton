@@ -38,6 +38,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Get all admins
+router.get('/', async (req, res) => {
+  try {
+    const admins = await Admin.find();
+    res.json(admins);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * Admin Orders Report
  * Returns per-order times and status for display on admin console.
@@ -92,6 +102,10 @@ router.get('/orders-report', async (req, res) => {
         totalRiderTime: Number(isFinite(totalRider) ? totalRider.toFixed(2) : 0),
         totalVendorTime: Number(isFinite(totalVendor) ? totalVendor.toFixed(2) : 0),
         totalServiceTime: totalService != null && isFinite(totalService) ? Number(totalService.toFixed(2)) : null,
+        racketDetails: o.racketDetails,
+        quoteAmount: o.quoteAmount,
+        price: o.price,
+        paymentStatus: o.paymentStatus,
         createdAt: o.createdAt
       };
     });
